@@ -19,6 +19,10 @@ import smtplib
 from email.message import EmailMessage
 from typing import List, Dict, Optional
 from openai import OpenAI
+# from dotenv import load_dotenv
+
+# # Load local .env for local testing (ignored in GH Actions)
+# load_dotenv()
 
 # ---------- Configuration from environment ----------
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")            # REQUIRED
@@ -43,7 +47,7 @@ DEFAULT_FEEDS = [
     "https://spectrum.ieee.org/rss/robotics/artificial-intelligence",
 ]
 
-FEEDS = os.environ.get("FEEDS", ",".join(DEFAULT_FEEDS))     # comma-separated RSS feed URLs
+FEEDS = os.environ.get("FEEDS") or ",".join(DEFAULT_FEEDS)     # comma-separated RSS feed URLs
 # safe parse: empty or missing -> default 10
 MAX_ARTICLES = int(os.environ.get("MAX_ARTICLES") or "10")
 KEYWORDS = os.environ.get(

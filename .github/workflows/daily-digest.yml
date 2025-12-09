@@ -1,6 +1,9 @@
 name: Daily AI Digest (RSS -> Gmail)
 
 on:
+  push:
+    branches:
+      - main
   schedule:
     # 04:30 UTC every day -> 10:00 AM IST (UTC+5:30)
     - cron: '30 4 * * *'

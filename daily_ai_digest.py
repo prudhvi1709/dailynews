@@ -18,9 +18,6 @@ import smtplib
 from email.message import EmailMessage
 from typing import List, Dict, Optional
 from openai import OpenAI
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # ---------- Configuration from environment ----------
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")            # REQUIRED

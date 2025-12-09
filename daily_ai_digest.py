@@ -50,10 +50,11 @@ DEFAULT_FEEDS = [
 FEEDS = os.environ.get("FEEDS") or ",".join(DEFAULT_FEEDS)     # comma-separated RSS feed URLs
 # safe parse: empty or missing -> default 10
 MAX_ARTICLES = int(os.environ.get("MAX_ARTICLES") or "10")
-KEYWORDS = os.environ.get(
-    "KEYWORDS",
-    "ai,artificial intelligence,machine learning,llm,chatbot,deep learning,neural network,gen ai,genai"
-).lower().split(",")
+_DEFAULT_KEYWORDS = "ai,artificial intelligence,machine learning,llm,chatbot,deep learning,neural network,gen ai,genai,openai, anthropic, gemini, google, copilot, aistartups, ai research, ai model"
+raw_keywords = os.environ.get("KEYWORDS") or _DEFAULT_KEYWORDS
+KEYWORDS = [k.strip().lower() for k in raw_keywords.split(",") if k.strip()]
+print("DEBUG: using keywords:", KEYWORDS)
+
 TIMEOUT_SECONDS = int(os.environ.get("HTTP_TIMEOUT") or "15")
 DRY_RUN = os.environ.get("DRY_RUN", "false").lower() in ("1", "true", "yes")
 

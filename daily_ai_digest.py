@@ -170,8 +170,6 @@ def ask_openai(prompt: str, model: Optional[str] = None) -> str:
             {"role": "system", "content": "You are a concise, factual tech journalist."},
             {"role": "user", "content": prompt},
         ],
-        temperature=0.0,
-        max_tokens=900,
     )
 
     # Parse response (new-style objects)

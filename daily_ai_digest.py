@@ -195,6 +195,35 @@ def parse_subject_and_body(ai_text: str):
     body = "\n".join(body_lines).strip()
     return subject, body
 
+def log_email_send(subject: str, status: str, log_file: str = "email_log.txt", max_entries: int = 30):
+    """
+    Append email send info to log file with automatic cleanup.
+    Keeps only the last max_entries (default 30) to prevent pile-up.
+
+    Args:
+        subject: Email subject line
+        status: 'SUCCESS' or 'FAILED: error message'
+        log_file: Path to log file
+        max_entries: Maximum number of entries to keep
+    """
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_entry = f"{timestamp} | {status} | {subject}\n"
+
+    # Read existing entries
+    try:
+        with open(log_file, "r") as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        lines = []
+
+    # Append new entry and keep only last max_entries
+    lines.append(log_entry)
+    lines = lines[-max_entries:]
+
+    # Write back
+    with open(log_file, "w") as f:
+        f.writelines(lines)
+
 def send_via_gmail(subject: str, body: str):
     if not (FROM_EMAIL and TO_EMAIL and GMAIL_APP_PASSWORD):
         raise ValueError("Missing FROM_EMAIL / TO_EMAIL / GMAIL_APP_PASSWORD env vars")
@@ -269,9 +298,17 @@ def main():
         print("Subject:", subject)
         print(body)
         print("--- END PREVIEW ---\n")
+        log_email_send(subject, "DRY_RUN")
     else:
-        send_via_gmail(subject, body)
-        print("Sent:", subject)
+        try:
+            send_via_gmail(subject, body)
+            print("Sent:", subject)
+            log_email_send(subject, "SUCCESS")
+        except Exception as e:
+            error_msg = f"FAILED: {str(e)[:100]}"  # truncate error to 100 chars
+            print(f"Failed to send email: {e}")
+            log_email_send(subject, error_msg)
+            raise  # re-raise to maintain existing error handling
 
 if __name__ == "__main__":
     main()

@@ -136,16 +136,21 @@ def select_top_items(items: List[Dict], max_items: int, keywords: List[str]) -> 
 def build_prompt(articles: List[Dict]) -> str:
     now_iso = datetime.datetime.now().strftime("%Y-%m-%d %H:%M IST")
     prompt = (
-        "You are an objective, factual tech journalist. You WILL ONLY use the information"
-        " provided below (title, description, url, publishedAt, source). DO NOT invent"
-        " facts, numbers, quotes, or events. If the description lacks detail, say"
-        " 'No further details available.' Do not speculate. Keep each story summary to 1 sentence."
+        "You are an objective, factual tech journalist. Extract the KEY FACTS and WHAT ACTUALLY HAPPENED"
+        " from each article below. ONLY use information provided (title, description, url, source)."
+        " DO NOT invent facts, numbers, quotes, or events. Include specific details like:"
+        " company names, product names, numbers, dates, quotes, key announcements, and outcomes."
+        " If details are missing, state 'Details not provided in source.'"
         "\n\nFormat the output exactly as follows:\n"
         "Subject: <short subject line (<=8 words)>\n\n"
-        "Body:\n- 2-3 bullet highlights (each 1 sentence)\n\n"
-        "Summary:\n<two short paragraphs (total 4-6 sentences)>\n\n"
-        "Top stories:\n[1] Title (Source) - 1-sentence summary. Link: <url>\n[2] ...\n\n"
-        "Why it matters:\n<one or two sentences>\n\n"
+        "Body:\n- 2-3 bullet highlights with specific facts\n\n"
+        "Summary:\n<two paragraphs with key details from top stories>\n\n"
+        "Detailed Stories:\n\n"
+        "[1] TITLE (Source)\n"
+        "What happened: <2-3 sentences with specific facts, numbers, quotes, and key details>\n"
+        "Citation: [Source name] - <url>\n\n"
+        "[2] ... (continue for each story)\n\n"
+        "Why it matters:\n<one or two sentences about implications>\n\n"
         "Sign-off:\n<one short friendly line>\n\n"
         f"Date: {now_iso}\n\n"
         "Articles (most recent first):\n"
@@ -158,7 +163,11 @@ def build_prompt(articles: List[Dict]) -> str:
             f"URL: {a.get('url')}\n"
             f"Desc: {a.get('description')}\n"
         )
-    prompt += "\n\nWrite the email now following the format exactly. No extra sections. Be concise."
+    prompt += (
+        "\n\nWrite the email now following the format exactly. Focus on WHAT HAPPENED with specifics."
+        " Each story should have enough detail that the reader doesn't need to click the link."
+        " Use the exact details provided in descriptions. No extra sections."
+    )
     return prompt
 
 def ask_openai(prompt: str, model: Optional[str] = None) -> str:

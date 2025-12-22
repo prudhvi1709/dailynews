@@ -430,7 +430,6 @@ def ask_openai(prompt: str, model: Optional[str] = None) -> str:
             {"role": "system", "content": "You are an insightful, engaging AI analyst who writes for innovation leaders. You connect dots, spot trends, and provide opinionated analysis. You make AI news interesting and actionable."},
             {"role": "user", "content": prompt},
         ],
-        temperature=0.7,  # Slightly higher for more creative/engaging output
     )
 
     try:

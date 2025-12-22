@@ -27,7 +27,7 @@ import re
 # ---------- Configuration from environment ----------
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL")
-OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")  # Use stronger model for better analysis
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL") or "gpt-5-mini"  # Use stronger model for better analysis
 
 TO_EMAIL = os.environ.get("TO_EMAIL")
 FROM_EMAIL = os.environ.get("FROM_EMAIL")

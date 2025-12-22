@@ -5,3 +5,5 @@ __pycache__/
 .vscode/
 email_log.txt
 UPGRADE_GUIDE.md
+IMPROVEMENTS_SUMMARY.md
+NEW_FEATURES.md

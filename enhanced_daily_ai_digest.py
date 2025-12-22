@@ -126,6 +126,13 @@ FEED_CATEGORIES = {
         "https://adage.com/rss.xml",
         "https://digiday.com/feed/",
     ],
+    # Linear TV / Broadcast
+    "broadcast_tv": [
+        "https://www.broadcastingcable.com/feed",
+        "https://tvnewscheck.com/feed/",
+        "https://www.sportico.com/feed/",
+        "https://www.multichannel.com/feed",
+    ],
 }
 
 # Flatten all feeds
@@ -175,10 +182,58 @@ KEYWORD_WEIGHTS = {
     "engagement": 2.0, "retention": 2.0, "churn": 2.0,
     "creator": 1.8, "influencer": 1.5, "tiktok": 1.8,
     "video generation": 2.5, "dubbing": 2.0, "localization": 2.0,
+
+    # Linear TV / Broadcast (traditional media)
+    "broadcast": 1.8, "cable tv": 1.8, "linear tv": 2.0, "live tv": 1.8,
+    "television": 1.5, "tv ratings": 2.0, "viewership": 2.0, "nielsen": 2.0,
+    "cord cutting": 2.0, "cord-cutting": 2.0, "broadcast network": 1.8,
+    "nbc": 1.5, "cbs": 1.5, "abc": 1.5, "fox": 1.5, "cnn": 1.5,
+    "live sports": 2.0, "sports broadcasting": 2.0,
 }
 
 # Additional recency boost (newer = better)
 RECENCY_BOOST_HOURS = 24  # Articles in last 24 hours get extra points
+
+# Google News RSS for real-time coverage (15-30 min delay)
+ENABLE_GOOGLE_NEWS = os.environ.get("ENABLE_GOOGLE_NEWS", "true").lower() in ("1", "true", "yes")
+
+def generate_google_news_queries(keyword_weights: Dict[str, float], max_queries: int = 10) -> List[str]:
+    """
+    Dynamically generate Google News queries from keyword dictionary
+    Takes top-weighted keywords and creates smart search queries
+    Much better than hardcoded queries!
+    """
+    # Sort keywords by weight (highest first)
+    sorted_keywords = sorted(keyword_weights.items(), key=lambda x: x[1], reverse=True)
+
+    queries = []
+
+    # Strategy 1: Top individual keywords (score >= 2.5)
+    top_keywords = [k for k, w in sorted_keywords if w >= 2.5][:6]
+    for keyword in top_keywords:
+        query = keyword.replace(" ", "+")
+        queries.append(query)
+
+    # Strategy 2: Combine related AI keywords
+    ai_companies = ["OpenAI", "Anthropic", "Google+AI", "DeepMind"]
+    queries.append("+OR+".join(ai_companies))
+
+    # Strategy 3: Combine streaming platforms
+    streaming = ["Netflix", "Disney%2B", "Spotify", "YouTube"]
+    queries.append("+OR+".join(streaming))
+
+    # Strategy 4: AI + Media combo
+    queries.append("AI+video+generation")
+    queries.append("AI+content+personalization")
+
+    # Strategy 5: Broadcast/Linear TV
+    queries.append("broadcast+television+streaming")
+    queries.append("linear+TV+ratings")
+
+    return queries[:max_queries]  # Limit to avoid rate limits
+
+# Mobile TL;DR version
+ENABLE_MOBILE_TLDR = os.environ.get("ENABLE_MOBILE_TLDR", "true").lower() in ("1", "true", "yes")
 
 TIMEOUT_SECONDS = int(os.environ.get("HTTP_TIMEOUT") or "15")
 DRY_RUN = os.environ.get("DRY_RUN", "false").lower() in ("1", "true", "yes")
@@ -257,6 +312,58 @@ def fetch_from_feeds(feeds: List[str], max_items: int) -> List[Dict]:
         if len(items) >= max_items * 5:
             break
 
+    return items
+
+
+def fetch_google_news(queries: List[str]) -> List[Dict]:
+    """
+    Fetch real-time news from Google News RSS (15-30 min delay)
+    Free, no API key needed
+    """
+    items = []
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; AIMediaDigest/2.0)"}
+
+    for query in queries:
+        url = f"https://news.google.com/rss/search?q={query}&hl=en&gl=US&ceid=US:en"
+        try:
+            resp = requests.get(url, headers=headers, timeout=TIMEOUT_SECONDS)
+            resp.raise_for_status()
+            d = feedparser.parse(resp.content)
+
+            for entry in d.entries[:5]:  # Limit 5 per query to avoid spam
+                title = entry.get("title", "").strip()
+                summary = entry.get("summary", "").strip()
+                link = entry.get("link", "").strip()
+                published = entry.get("published", "")
+
+                # Parse published date
+                published_parsed = entry.get("published_parsed")
+                if published_parsed:
+                    try:
+                        published_dt = datetime.datetime(*published_parsed[:6])
+                    except:
+                        published_dt = None
+                else:
+                    published_dt = None
+
+                # Clean HTML from summary
+                summary = re.sub(r'<[^>]+>', '', summary)
+                summary = re.sub(r'\s+', ' ', summary).strip()
+
+                items.append({
+                    "source": "Google News (Real-time)",
+                    "title": title,
+                    "description": summary[:500],
+                    "url": link,
+                    "publishedAt": published,
+                    "publishedDt": published_dt,
+                })
+
+        except Exception as e:
+            print(f"DEBUG: Google News query '{query}' failed: {e}")
+            continue
+
+    print(f"DEBUG: Fetched {len(items)} items from Google News")
     return items
 
 
@@ -492,6 +599,74 @@ def parse_subject_and_body(ai_text: str):
     return subject, body
 
 
+def create_mobile_tldr(ai_text: str, subject: str) -> str:
+    """
+    Create mobile-friendly TL;DR version (3-min quick scan)
+    Extracts key themes and first sentence of each story
+    """
+    lines = ai_text.split('\n')
+    mobile_content = []
+
+    mobile_content.append(f"📱 QUICK SCAN (Mobile)\n")
+    mobile_content.append(f"Subject: {subject}\n")
+    mobile_content.append("="*50)
+
+    # Extract TOP INSIGHT
+    in_top_insight = False
+    top_insight_lines = []
+    for line in lines:
+        if "TOP INSIGHT" in line.upper():
+            in_top_insight = True
+            continue
+        if in_top_insight:
+            if line.startswith('===') or line.startswith('##'):
+                break
+            if line.strip():
+                top_insight_lines.append(line.strip())
+
+    if top_insight_lines:
+        mobile_content.append("\n🎯 TODAY'S INSIGHT:")
+        mobile_content.append(" ".join(top_insight_lines[:2]))  # First 2 sentences only
+
+    # Extract KEY THEMES
+    in_themes = False
+    theme_count = 0
+    for line in lines:
+        if "KEY THEMES" in line.upper():
+            in_themes = True
+            mobile_content.append("\n\n🔑 KEY THEMES:")
+            continue
+        if in_themes:
+            if line.startswith('•'):
+                mobile_content.append(line)
+                theme_count += 1
+                if theme_count >= 3:  # Limit to 3 themes
+                    break
+            elif line.startswith('==='):
+                break
+
+    # Extract story titles only
+    mobile_content.append("\n\n📰 STORIES (Tap for full digest):")
+    story_count = 0
+    for line in lines:
+        if line.startswith('## '):
+            # Extract just the title
+            title = line.replace('##', '').strip()
+            # Remove numbering if present
+            if '. ' in title:
+                title = title.split('. ', 1)[1] if len(title.split('. ', 1)) > 1 else title
+            mobile_content.append(f"  {story_count + 1}. {title[:60]}...")
+            story_count += 1
+            if story_count >= 5:  # Show max 5 stories in TL;DR
+                break
+
+    mobile_content.append(f"\n\n📖 {story_count}+ stories in full digest below")
+    mobile_content.append("⏱️  3-min scan | Full read: 10-15 min")
+    mobile_content.append("\n" + "="*50 + "\n")
+
+    return "\n".join(mobile_content)
+
+
 def log_email_send(subject: str, status: str, log_file: str = "email_log.txt", max_entries: int = 30):
     """Log email sends with automatic cleanup"""
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -510,8 +685,8 @@ def log_email_send(subject: str, status: str, log_file: str = "email_log.txt", m
         f.writelines(lines)
 
 
-def send_via_gmail(subject: str, body: str):
-    """Send email via Gmail SMTP"""
+def send_via_gmail(subject: str, body: str, mobile_tldr: Optional[str] = None):
+    """Send email via Gmail SMTP with optional mobile TL;DR"""
     if not (FROM_EMAIL and TO_EMAIL and GMAIL_APP_PASSWORD):
         raise ValueError("Missing FROM_EMAIL / TO_EMAIL / GMAIL_APP_PASSWORD env vars")
 
@@ -519,13 +694,29 @@ def send_via_gmail(subject: str, body: str):
     msg["From"] = FROM_EMAIL
     msg["To"] = TO_EMAIL
     msg["Subject"] = subject
-    msg.set_content(body)
+
+    # Combine mobile TL;DR with full body for plain text
+    if mobile_tldr:
+        plain_text = mobile_tldr + "\n\n" + body
+    else:
+        plain_text = body
+
+    msg.set_content(plain_text)
 
     # Create nice HTML version with better formatting
-    html_body = body.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    html_body = html_body.replace("\n\n", "</p><p>")
-    html_body = html_body.replace("\n", "<br>")
-    html_body = f"<html><body style='font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; max-width: 700px; margin: 0 auto; padding: 20px;'><p>{html_body}</p></body></html>"
+    if mobile_tldr:
+        # Mobile TL;DR at top with background color for visibility
+        mobile_html = mobile_tldr.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        mobile_html = mobile_html.replace("\n", "<br>")
+        mobile_section = f"<div style='background-color: #f0f8ff; padding: 15px; margin-bottom: 20px; border-left: 4px solid #0066cc;'>{mobile_html}</div>"
+    else:
+        mobile_section = ""
+
+    body_html = body.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    body_html = body_html.replace("\n\n", "</p><p>")
+    body_html = body_html.replace("\n", "<br>")
+
+    html_body = f"<html><body style='font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; max-width: 700px; margin: 0 auto; padding: 20px;'>{mobile_section}<p>{body_html}</p></body></html>"
 
     msg.add_alternative(html_body, subtype="html")
 
@@ -551,7 +742,17 @@ def main():
 
     print(f"DEBUG: Fetching from {len(feed_list)} RSS feeds...")
     raw_items = fetch_from_feeds(feed_list, max_items=MAX_ARTICLES)
-    print(f"DEBUG: Fetched {len(raw_items)} raw items")
+    print(f"DEBUG: Fetched {len(raw_items)} raw items from RSS feeds")
+
+    # Add Google News for real-time coverage if enabled
+    if ENABLE_GOOGLE_NEWS:
+        print(f"DEBUG: Generating dynamic Google News queries from keyword dictionary...")
+        google_queries = generate_google_news_queries(KEYWORD_WEIGHTS, max_queries=10)
+        print(f"DEBUG: Generated {len(google_queries)} queries: {google_queries[:3]}...")
+        print(f"DEBUG: Fetching real-time news from Google News...")
+        google_items = fetch_google_news(google_queries)
+        raw_items.extend(google_items)
+        print(f"DEBUG: Total items after Google News: {len(raw_items)}")
 
     top_articles = select_top_articles(raw_items, MAX_ARTICLES, KEYWORD_WEIGHTS)
     print(f"DEBUG: Selected {len(top_articles)} top articles")
@@ -589,18 +790,28 @@ def main():
 
     subject, body = parse_subject_and_body(ai_out)
 
+    # Create mobile TL;DR if enabled
+    mobile_tldr = None
+    if ENABLE_MOBILE_TLDR:
+        print("DEBUG: Creating mobile TL;DR version...")
+        mobile_tldr = create_mobile_tldr(ai_out, subject)
+
     if DRY_RUN:
         print("\n" + "="*80)
         print("DRY RUN - EMAIL PREVIEW")
         print("="*80)
         print(f"Subject: {subject}")
         print("="*80)
+        if mobile_tldr:
+            print("\n--- MOBILE TL;DR (Top of Email) ---")
+            print(mobile_tldr)
+            print("\n--- FULL DIGEST ---")
         print(body)
         print("="*80)
         log_email_send(subject, "DRY_RUN")
     else:
         try:
-            send_via_gmail(subject, body)
+            send_via_gmail(subject, body, mobile_tldr)
             print(f"SUCCESS: Sent '{subject}'")
             log_email_send(subject, "SUCCESS")
         except Exception as e:

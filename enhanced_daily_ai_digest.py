@@ -20,10 +20,10 @@ from openai import OpenAI
 from collections import defaultdict
 import re
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-# # Load local .env for local testing (ignored in GH Actions)
-load_dotenv()
+# # # Load local .env for local testing (ignored in GH Actions)
+# load_dotenv()
 # ---------- Configuration from environment ----------
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL")

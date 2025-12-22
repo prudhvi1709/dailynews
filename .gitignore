@@ -1,2 +1,7 @@
 .env
 mail
+__pycache__/
+.gitignore
+.vscode/
+email_log.txt
+UPGRADE_GUIDE.md

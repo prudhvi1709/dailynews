@@ -26,18 +26,19 @@ jobs:
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install openai feedparser requests
+          pip install -r requirements.txt
 
-      - name: Run daily digest
+      - name: Run enhanced daily digest
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
           TO_EMAIL: ${{ secrets.TO_EMAIL }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           FEEDS: ${{ secrets.FEEDS }}
           MAX_ARTICLES: ${{ secrets.MAX_ARTICLES }}
         run: |
-          python daily_ai_digest.py
+          python enhanced_daily_ai_digest.py
 
       - name: Commit log file
         run: |

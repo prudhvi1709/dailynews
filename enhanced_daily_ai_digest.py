@@ -1,0 +1,578 @@
+#!/usr/bin/env python3
+"""
+enhanced_daily_ai_digest.py
+Enhanced personalized AI news digest with:
+- 50+ diverse global RSS feeds
+- Intelligent content scoring based on user interests
+- Insightful, opinionated analysis (not boring summaries)
+- Innovation-focused perspective for innovation teams
+- Better email formatting and readability
+"""
+
+import os
+import datetime
+import feedparser
+import requests
+import smtplib
+from email.message import EmailMessage
+from typing import List, Dict, Optional
+from openai import OpenAI
+from collections import defaultdict
+import re
+
+from dotenv import load_dotenv
+
+# # Load local .env for local testing (ignored in GH Actions)
+load_dotenv()
+# ---------- Configuration from environment ----------
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL")
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")  # Use stronger model for better analysis
+
+TO_EMAIL = os.environ.get("TO_EMAIL")
+FROM_EMAIL = os.environ.get("FROM_EMAIL")
+GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
+
+# ---------- Comprehensive Global RSS Feed List ----------
+# Organized by category for diversity
+FEED_CATEGORIES = {
+    "ai_focused": [
+        "https://www.technologyreview.com/feed/",
+        "https://www.artificialintelligence-news.com/feed/",
+        "https://venturebeat.com/category/ai/feed/",
+        "https://www.marktechpost.com/feed/",
+        "https://syncedreview.com/feed/",
+        "https://www.unite.ai/feed/",
+    ],
+    "major_tech_news": [
+        "https://www.theverge.com/rss/ai/index.xml",
+        "https://techcrunch.com/tag/artificial-intelligence/feed/",
+        "https://www.wired.com/feed/tag/ai/latest/rss",
+        "https://www.zdnet.com/topic/artificial-intelligence/rss.xml",
+        "https://arstechnica.com/tag/artificial-intelligence/feed/",
+        "https://www.engadget.com/rss.xml",
+    ],
+    "business_analysis": [
+        "https://www.forbes.com/ai/feed/",
+        "https://www.businessinsider.com/sai/rss",
+        "https://www.cnbc.com/id/19854910/device/rss/rss.html",  # Tech
+        "https://fortune.com/section/artificial-intelligence/feed/",
+    ],
+    "research_academic": [
+        "https://blog.google/technology/ai/rss/",
+        "https://openai.com/blog/rss/",
+        "https://www.deepmind.com/blog/rss.xml",
+        "https://blogs.nvidia.com/feed/",
+        "https://ai.meta.com/blog/rss/",
+        "https://www.microsoft.com/en-us/research/feed/",
+    ],
+    "open_source_community": [
+        "https://huggingface.co/blog/feed.xml",
+        "https://github.blog/category/ai-and-ml/feed/",
+        "https://pytorch.org/blog/feed.xml",
+    ],
+    "developer_focused": [
+        "https://news.ycombinator.com/rss",
+        "https://www.reddit.com/r/MachineLearning/.rss",
+        "https://www.reddit.com/r/artificial/.rss",
+        "https://dev.to/feed/tag/ai",
+    ],
+    "news_general": [
+        "https://feeds.bbci.co.uk/news/technology/rss.xml",
+        "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml",
+        "https://www.reuters.com/technology/artificial-intelligence/rss",
+        "https://www.theguardian.com/technology/artificialintelligenceai/rss",
+        "https://www.wsj.com/xml/rss/3_7455.xml",  # Tech
+    ],
+    "asia_india": [
+        "https://timesofindia.indiatimes.com/rssfeeds/66949542.cms",  # Tech
+        "https://economictimes.indiatimes.com/tech/rssfeeds/13357270.cms",
+        "https://tech.hindustantimes.com/rss/tech/rssfeed.xml",
+        "https://www.thehindu.com/sci-tech/technology/feeder/default.rss",
+    ],
+    "uk_europe": [
+        "https://www.standard.co.uk/tech/rss",
+        "https://www.independent.co.uk/tech/rss",
+        "https://www.telegraph.co.uk/technology/rss.xml",
+    ],
+    "australia": [
+        "https://www.smh.com.au/rss/technology.xml",
+        "https://www.afr.com/technology/rss",
+    ],
+    "startups_vc": [
+        "https://news.crunchbase.com/feed/",
+        "https://techcrunch.com/tag/venture-capital/feed/",
+    ],
+    "ai_newsletters_blogs": [
+        "https://www.aisnakeoil.com/feed",
+        "https://www.oneusefulthing.org/feed",
+    ],
+}
+
+# Flatten all feeds
+DEFAULT_FEEDS = []
+for category, feeds in FEED_CATEGORIES.items():
+    DEFAULT_FEEDS.extend(feeds)
+
+FEEDS = os.environ.get("FEEDS") or ",".join(DEFAULT_FEEDS)
+MAX_ARTICLES = int(os.environ.get("MAX_ARTICLES") or "20")  # Increased for comprehensive coverage
+
+# Enhanced keywords with weights for scoring
+KEYWORD_WEIGHTS = {
+    # High priority - Hot topics and innovations
+    "gpt-4": 3.0, "gpt-5": 3.0, "claude": 3.0, "gemini": 3.0, "llama": 2.5,
+    "o1": 2.5, "reasoning model": 2.5, "frontier model": 2.5,
+    "breakthrough": 2.5, "agi": 2.5,
+
+    # Company tracking
+    "openai": 2.0, "anthropic": 2.0, "google ai": 2.0, "deepmind": 2.0,
+    "meta ai": 2.0, "microsoft ai": 2.0, "hugging face": 2.0,
+
+    # Key technologies
+    "transformer": 2.0, "multimodal": 2.0, "diffusion": 2.0,
+    "reinforcement learning": 2.0, "rlhf": 2.0,
+
+    # Applications and tools
+    "copilot": 1.8, "chatgpt": 1.8, "midjourney": 1.8, "stable diffusion": 1.8,
+
+    # Open source
+    "open source": 1.8, "open model": 1.8, "llama": 2.0,
+
+    # Research terms
+    "paper": 1.5, "arxiv": 1.5, "research": 1.3, "benchmark": 1.5,
+
+    # Business/startup
+    "startup": 1.5, "funding": 1.5, "series a": 1.7, "series b": 1.7,
+    "acquisition": 1.8, "ipo": 2.0,
+
+    # General AI terms (lower weight)
+    "artificial intelligence": 1.0, "ai": 1.0, "machine learning": 1.0,
+    "deep learning": 1.0, "neural network": 1.0, "llm": 1.2,
+}
+
+# Additional recency boost (newer = better)
+RECENCY_BOOST_HOURS = 24  # Articles in last 24 hours get extra points
+
+TIMEOUT_SECONDS = int(os.environ.get("HTTP_TIMEOUT") or "15")
+DRY_RUN = os.environ.get("DRY_RUN", "false").lower() in ("1", "true", "yes")
+
+# Initialize OpenAI client
+client = OpenAI(
+    api_key=OPENAI_API_KEY,
+    base_url=OPENAI_BASE_URL if OPENAI_BASE_URL else None
+)
+
+# ---------- Enhanced Utility Functions ----------
+
+def fetch_from_feeds(feeds: List[str], max_items: int) -> List[Dict]:
+    """
+    Fetch feeds with better error handling and metadata extraction
+    """
+    items: List[Dict] = []
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; PersonalAIDigest/2.0)"}
+
+    for url in feeds:
+        try:
+            resp = requests.get(url, headers=headers, timeout=TIMEOUT_SECONDS)
+            resp.raise_for_status()
+            d = feedparser.parse(resp.content)
+        except Exception as e:
+            print(f"DEBUG: failed to fetch/parse feed {url}: {e}")
+            continue
+
+        source_title = d.feed.get("title", "") or url
+
+        for entry in d.entries:
+            title = (entry.get("title") or "").strip()
+
+            # Get description
+            if entry.get("summary"):
+                summary = entry.get("summary", "").strip()
+            elif entry.get("content"):
+                content = entry.get("content")
+                if isinstance(content, list) and content:
+                    summary = content[0].get("value", "").strip()
+                else:
+                    summary = str(content).strip()
+            else:
+                summary = entry.get("description", "").strip()
+
+            # Clean HTML from summary
+            summary = re.sub(r'<[^>]+>', '', summary)
+            summary = re.sub(r'\s+', ' ', summary).strip()
+
+            link = (entry.get("link") or "").strip()
+
+            # Parse published date
+            published_parsed = entry.get("published_parsed") or entry.get("updated_parsed")
+            if published_parsed:
+                try:
+                    published_dt = datetime.datetime(*published_parsed[:6])
+                except:
+                    published_dt = None
+            else:
+                published_dt = None
+
+            published_str = entry.get("published", entry.get("updated", ""))
+
+            items.append({
+                "source": source_title,
+                "title": title,
+                "description": summary[:500],  # Limit description length
+                "url": link,
+                "publishedAt": published_str,
+                "publishedDt": published_dt,
+            })
+
+            if len(items) >= max_items * 5:  # Fetch more for better selection
+                break
+
+        if len(items) >= max_items * 5:
+            break
+
+    return items
+
+
+def calculate_article_score(item: Dict, keyword_weights: Dict[str, float]) -> float:
+    """
+    Score articles based on relevance, recency, and interest
+    Higher score = more relevant/interesting
+    """
+    text = (item.get("title", "") + " " + item.get("description", "")).lower()
+    score = 0.0
+
+    # Keyword matching with weights
+    for keyword, weight in keyword_weights.items():
+        if keyword.lower() in text:
+            score += weight
+
+    # Recency boost - articles in last 24 hours get extra points
+    if item.get("publishedDt"):
+        age_hours = (datetime.datetime.now() - item["publishedDt"]).total_seconds() / 3600
+        if age_hours < RECENCY_BOOST_HOURS:
+            # Boost based on freshness (0-24 hours: +2.0 to +0.5)
+            recency_boost = 2.0 * (1 - age_hours / RECENCY_BOOST_HOURS)
+            score += recency_boost
+
+    # Title length boost (longer titles often more substantive)
+    title_len = len(item.get("title", ""))
+    if title_len > 60:
+        score += 0.3
+
+    # Description length boost
+    desc_len = len(item.get("description", ""))
+    if desc_len > 200:
+        score += 0.5
+
+    return score
+
+
+def select_top_articles(items: List[Dict], max_articles: int, keyword_weights: Dict[str, float]) -> List[Dict]:
+    """
+    Select top articles with intelligent scoring and diversity
+    """
+    # Filter out items without AI relevance (score > 0)
+    scored_items = []
+    for item in items:
+        score = calculate_article_score(item, keyword_weights)
+        if score > 0.8:  # Minimum relevance threshold
+            item["score"] = score
+            scored_items.append(item)
+
+    # Sort by score
+    scored_items.sort(key=lambda x: x["score"], reverse=True)
+
+    # Deduplicate by URL and similar titles
+    seen_urls = set()
+    seen_title_words = []
+    unique_items = []
+
+    for item in scored_items:
+        url = item.get("url", "").strip()
+        title = item.get("title", "").strip().lower()
+
+        # Skip if duplicate URL
+        if url and url in seen_urls:
+            continue
+
+        # Skip if very similar title (avoid duplicate stories)
+        title_words = set(title.split()[:5])  # First 5 words
+        is_similar = False
+        for seen_words in seen_title_words:
+            if len(title_words & seen_words) >= 3:  # 3+ words match
+                is_similar = True
+                break
+
+        if is_similar:
+            continue
+
+        seen_urls.add(url)
+        seen_title_words.append(title_words)
+        unique_items.append(item)
+
+        if len(unique_items) >= max_articles:
+            break
+
+    # Ensure source diversity - don't have too many from one source
+    source_counts = defaultdict(int)
+    diverse_items = []
+
+    for item in unique_items:
+        source = item.get("source", "")
+        if source_counts[source] < 3:  # Max 3 articles per source
+            diverse_items.append(item)
+            source_counts[source] += 1
+
+    return diverse_items
+
+
+def build_enhanced_prompt(articles: List[Dict], user_context: str) -> str:
+    """
+    Build prompt for insightful, opinionated, innovation-focused analysis
+    """
+    now_iso = datetime.datetime.now().strftime("%Y-%m-%d %H:%M IST")
+
+    prompt = f"""You are an insightful AI analyst writing for an innovation team leader who tracks global AI developments. Your reader is based in India, works in innovation, and wants to spot emerging trends and opportunities.
+
+YOUR MISSION: Transform these news items into an engaging, opinionated digest that:
+1. Identifies patterns and connections between stories
+2. Provides critical analysis (not just facts - WHY does this matter?)
+3. Highlights innovation opportunities and emerging trends
+4. Uses a conversational, engaging tone (not boring corporate speak)
+5. Focuses on implications for innovation teams
+
+CONTEXT ABOUT YOUR READER:
+{user_context}
+
+WRITING STYLE:
+- Be opinionated and analytical (e.g., "This is a big deal because..." or "This suggests...")
+- Connect dots between stories ("This aligns with..." or "This contradicts...")
+- Highlight what's genuinely new vs. incremental
+- Use engaging language (avoid "Furthermore", "Moreover" - be conversational)
+- Include specific details (numbers, names, dates) but focus on implications
+- When relevant, mention what this means for innovation teams
+
+FORMAT YOUR OUTPUT EXACTLY AS:
+
+Subject: [Create an engaging subject line that captures the biggest theme/trend of the day, max 10 words]
+
+=== TOP INSIGHT ===
+[2-3 sentences: What's the most important pattern or trend today? Connect multiple stories if relevant. Be opinionated.]
+
+=== KEY THEMES TODAY ===
+• [Theme 1]: Brief insight
+• [Theme 2]: Brief insight
+• [Theme 3]: Brief insight
+
+=== DETAILED STORIES ===
+
+[For each story, write in this format:]
+
+## [Number]. [Engaging Title]
+**Source**: [Source name] | **When**: [Timeframe like "Today" or "Yesterday"]
+
+[2-3 engaging paragraphs that include:
+- What happened (specific facts, numbers, quotes)
+- Why it matters (analysis and implications)
+- What's interesting or surprising about it
+- Any connections to other trends or stories]
+
+**Link**: [URL]
+**Innovation angle**: [1 sentence: What could innovation teams learn or do with this?]
+
+---
+
+[Repeat for each story]
+
+=== BOTTOM LINE ===
+[2-3 sentences: Final thought about what all this means. What should readers be thinking about? Any predictions or questions to ponder?]
+
+---
+Delivered: {now_iso}
+
+NOW, HERE ARE TODAY'S ARTICLES (sorted by relevance):
+
+"""
+
+    for i, article in enumerate(articles, 1):
+        prompt += f"""
+[{i}] Title: {article.get('title')}
+Source: {article.get('source')}
+Published: {article.get('publishedAt')}
+URL: {article.get('url')}
+Description: {article.get('description')}
+Relevance Score: {article.get('score', 0):.2f}
+
+"""
+
+    prompt += """
+IMPORTANT REMINDERS:
+- Only use information provided above - no hallucinations
+- Be engaging and opinionated (boring = bad)
+- Connect stories and identify patterns
+- Focus on innovation opportunities
+- Use conversational language
+- Include specific facts and details
+- Make it worth the reader's time
+
+Write the digest now:"""
+
+    return prompt
+
+
+def ask_openai(prompt: str, model: Optional[str] = None) -> str:
+    """Call OpenAI with enhanced model"""
+    model_to_use = model or OPENAI_MODEL
+
+    resp = client.chat.completions.create(
+        model=model_to_use,
+        messages=[
+            {"role": "system", "content": "You are an insightful, engaging AI analyst who writes for innovation leaders. You connect dots, spot trends, and provide opinionated analysis. You make AI news interesting and actionable."},
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.7,  # Slightly higher for more creative/engaging output
+    )
+
+    try:
+        return resp.choices[0].message.content.strip()
+    except Exception:
+        try:
+            return resp["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            raise RuntimeError(f"Unable to parse OpenAI response: {e}")
+
+
+def parse_subject_and_body(ai_text: str):
+    """Parse AI response into subject and body"""
+    lines = ai_text.splitlines()
+    subject = "Daily AI Digest - Innovation Insights"
+    body_lines = []
+
+    if lines:
+        first = lines[0].strip()
+        if first.lower().startswith("subject:"):
+            subject = first.split(":", 1)[1].strip()
+            body_lines = lines[1:]
+        else:
+            body_lines = lines
+
+    body = "\n".join(body_lines).strip()
+    return subject, body
+
+
+def log_email_send(subject: str, status: str, log_file: str = "email_log.txt", max_entries: int = 30):
+    """Log email sends with automatic cleanup"""
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_entry = f"{timestamp} | {status} | {subject}\n"
+
+    try:
+        with open(log_file, "r") as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        lines = []
+
+    lines.append(log_entry)
+    lines = lines[-max_entries:]
+
+    with open(log_file, "w") as f:
+        f.writelines(lines)
+
+
+def send_via_gmail(subject: str, body: str):
+    """Send email via Gmail SMTP"""
+    if not (FROM_EMAIL and TO_EMAIL and GMAIL_APP_PASSWORD):
+        raise ValueError("Missing FROM_EMAIL / TO_EMAIL / GMAIL_APP_PASSWORD env vars")
+
+    msg = EmailMessage()
+    msg["From"] = FROM_EMAIL
+    msg["To"] = TO_EMAIL
+    msg["Subject"] = subject
+    msg.set_content(body)
+
+    # Create nice HTML version with better formatting
+    html_body = body.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    html_body = html_body.replace("\n\n", "</p><p>")
+    html_body = html_body.replace("\n", "<br>")
+    html_body = f"<html><body style='font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; max-width: 700px; margin: 0 auto; padding: 20px;'><p>{html_body}</p></body></html>"
+
+    msg.add_alternative(html_body, subtype="html")
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as smtp:
+        try:
+            smtp.login(FROM_EMAIL, GMAIL_APP_PASSWORD)
+            smtp.send_message(msg)
+        except smtplib.SMTPAuthenticationError as e:
+            raise RuntimeError(
+                "SMTPAuthenticationError: Gmail rejected credentials. "
+                f"Check App Password and ensure 2FA is ON. Original: {e}"
+            )
+
+
+# ---------- Main Flow ----------
+
+def main():
+    if not OPENAI_API_KEY:
+        raise SystemExit("OPENAI_API_KEY not set.")
+
+    # Build feed list
+    feed_list = [u.strip() for u in FEEDS.split(",") if u.strip()]
+
+    print(f"DEBUG: Fetching from {len(feed_list)} RSS feeds...")
+    raw_items = fetch_from_feeds(feed_list, max_items=MAX_ARTICLES)
+    print(f"DEBUG: Fetched {len(raw_items)} raw items")
+
+    top_articles = select_top_articles(raw_items, MAX_ARTICLES, KEYWORD_WEIGHTS)
+    print(f"DEBUG: Selected {len(top_articles)} top articles")
+
+    # Show top articles
+    for i, art in enumerate(top_articles[:5], 1):
+        print(f"DEBUG: #{i} (score {art['score']:.2f}): {art['title'][:80]}")
+
+    if not top_articles:
+        print("WARNING: No relevant articles found")
+        return
+
+    # Build user context
+    user_context = """
+    - Role: Innovation team leader
+    - Location: India
+    - Interests: ALL AI topics (LLMs, tools, open source, research, startups)
+    - Companies: OpenAI, Anthropic, Google AI, Meta AI, Mistral, Hugging Face, Microsoft AI, Amazon AI, and emerging startups
+    - Geography: Global coverage (US, UK, EU, India, Asia, Australia)
+    - Style preference: Insightful, opinionated, engaging (NOT boring corporate summaries)
+    - Goal: Spot innovation opportunities and emerging trends
+    """
+
+    prompt_used = build_enhanced_prompt(top_articles, user_context)
+
+    print("DEBUG: Calling OpenAI for enhanced analysis...")
+    try:
+        ai_out = ask_openai(prompt_used)
+    except Exception as e:
+        raise RuntimeError(f"OpenAI request failed: {e}")
+
+    subject, body = parse_subject_and_body(ai_out)
+
+    if DRY_RUN:
+        print("\n" + "="*80)
+        print("DRY RUN - EMAIL PREVIEW")
+        print("="*80)
+        print(f"Subject: {subject}")
+        print("="*80)
+        print(body)
+        print("="*80)
+        log_email_send(subject, "DRY_RUN")
+    else:
+        try:
+            send_via_gmail(subject, body)
+            print(f"SUCCESS: Sent '{subject}'")
+            log_email_send(subject, "SUCCESS")
+        except Exception as e:
+            error_msg = f"FAILED: {str(e)[:100]}"
+            print(f"ERROR: Failed to send email: {e}")
+            log_email_send(subject, error_msg)
+            raise
+
+
+if __name__ == "__main__":
+    main()

@@ -1,6 +1,19 @@
-# Daily AI Digest
+# Daily AI Digest - Enhanced Edition
 
-Automated daily AI newsletter that fetches trusted RSS feeds, uses OpenAI to create a concise, hallucination-safe morning email, and sends it via Gmail SMTP (App Password). Works locally and in GitHub Actions (scheduled at 10:00 AM IST).
+**Personalized, insightful AI news digest** with 50+ global RSS feeds, intelligent content scoring, and engaging analysis tailored for innovation teams.
+
+Fetches from diverse sources, uses advanced AI to provide opinionated insights (not boring summaries), and delivers via Gmail. Works locally and in GitHub Actions (scheduled at 10:00 AM IST).
+
+## 🆕 Latest Enhancements
+
+The system has been **significantly upgraded**! See [UPGRADE_GUIDE.md](UPGRADE_GUIDE.md) for full details.
+
+**Key improvements:**
+- 📰 **50+ diverse RSS feeds** (was 10) - global coverage from US, UK, EU, India, Asia, Australia
+- 🎯 **Intelligent scoring** - keyword weighting, recency boost, source diversity
+- 💡 **Insightful analysis** - opinionated takes, pattern recognition, innovation angles
+- 🌍 **Personalized** - tailored for innovation teams tracking latest AI developments
+- 📧 **Better formatting** - engaging structure with themes, detailed analysis, bottom-line insights
 
 ---
 
@@ -15,10 +28,13 @@ Automated daily AI newsletter that fetches trusted RSS feeds, uses OpenAI to cre
 ---
 
 ## Files
-- `daily_ai_digest.py` — main script (production-ready variant in repo)
+- `enhanced_daily_ai_digest.py` — **NEW Enhanced version** (production-ready with advanced features)
+- `daily_ai_digest.py` — Original version (kept as backup)
 - `.github/workflows/daily-digest.yml` — GitHub Actions workflow (runs daily at 10:00 AM IST)
 - `requirements.txt` — Python dependencies
 - `.env` — local environment file (not checked into git)
+- `.env.example` — Template for local setup
+- `UPGRADE_GUIDE.md` — Detailed guide on new features and setup
 
 ---
 
@@ -34,28 +50,29 @@ Automated daily AI newsletter that fetches trusted RSS feeds, uses OpenAI to cre
 2. **Install dependencies:**
 	```bash
 	pip install -r requirements.txt
-	# or: pip install openai feedparser python-dotenv
 	```
 
-3. **Create a `.env` file in the repo root with your secrets (no quotes):**
+3. **Create a `.env` file from the example:**
+	```bash
+	cp .env.example .env
+	```
+
+4. **Edit `.env` with your credentials:**
 	```ini
 	OPENAI_API_KEY=sk-...
-	OPENAI_BASE_URL=https://api.openai.com/v1            # optional
-	OPENAI_MODEL=gpt-4o-mini                             # optional
+	OPENAI_MODEL=gpt-4o                                  # or gpt-4o-mini for lower cost
 	TO_EMAIL=your.receive@mail.com
 	FROM_EMAIL=your.sender@gmail.com
 	GMAIL_APP_PASSWORD=abcdefghijklmnop                  # 16-char Gmail app password (no spaces)
-	FEEDS=https://www.technologyreview.com/feed/,https://www.theverge.com/rss/ai/index.xml
-	MAX_ARTICLES=8
-	KEYWORDS=ai,artificial intelligence,machine learning,llm,chatbot
-	HTTP_TIMEOUT=15
+	MAX_ARTICLES=20                                      # 15-25 recommended
 	DRY_RUN=true
 	```
 
-4. **Preview (dry run):**
+5. **Test the enhanced version (dry run):**
 	```bash
-	python daily_ai_digest.py
+	python enhanced_daily_ai_digest.py
 	```
 
-5. **Send email:**
-	Set `DRY_RUN=false` (or remove) in `.env` to actually send the email.
+6. **Review the output** and when satisfied, set `DRY_RUN=false` to send actual emails.
+
+7. **See [UPGRADE_GUIDE.md](UPGRADE_GUIDE.md)** for detailed documentation and customization options.

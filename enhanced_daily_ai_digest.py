@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """
 enhanced_daily_ai_digest.py
-Enhanced personalized AI news digest with:
-- 50+ diverse global RSS feeds
-- Intelligent content scoring based on user interests
-- Insightful, opinionated analysis (not boring summaries)
-- Innovation-focused perspective for innovation teams
-- Better email formatting and readability
+AI News + Media Innovation Intelligence System
+
+Hybrid digest covering:
+- Latest AI developments (models, research, tools, companies)
+- Media/streaming industry innovations and competitive moves
+- AI applications in content, personalization, production
+- Business insights for media innovation teams
+- 60+ diverse global sources (AI + Media/Entertainment)
+
+Designed for innovation teams tracking AI trends AND media industry developments.
 """
 
 import os
@@ -27,7 +31,7 @@ import re
 # ---------- Configuration from environment ----------
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL")
-OPENAI_MODEL = os.environ.get("OPENAI_MODEL") or "gpt-5-mini"  # Use stronger model for better analysis
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL") or "gpt-4o"  # Use stronger model for better analysis
 
 TO_EMAIL = os.environ.get("TO_EMAIL")
 FROM_EMAIL = os.environ.get("FROM_EMAIL")
@@ -107,6 +111,21 @@ FEED_CATEGORIES = {
         "https://www.aisnakeoil.com/feed",
         "https://www.oneusefulthing.org/feed",
     ],
+    # Media/Streaming Industry (for context and applications)
+    "streaming_media": [
+        "https://variety.com/feed/",
+        "https://www.hollywoodreporter.com/feed/",
+        "https://thestreamable.com/feed",
+        "https://www.streamingmedia.com/RSS/Articles.xml",
+    ],
+    "creator_economy": [
+        "https://www.tubefilter.com/feed/",
+        "https://techcrunch.com/tag/creator-economy/feed/",
+    ],
+    "media_business": [
+        "https://adage.com/rss.xml",
+        "https://digiday.com/feed/",
+    ],
 }
 
 # Flatten all feeds
@@ -148,6 +167,14 @@ KEYWORD_WEIGHTS = {
     # General AI terms (lower weight)
     "artificial intelligence": 1.0, "ai": 1.0, "machine learning": 1.0,
     "deep learning": 1.0, "neural network": 1.0, "llm": 1.2,
+
+    # Media/Streaming (for context and applications)
+    "netflix": 2.0, "disney+": 2.0, "hbo max": 2.0, "prime video": 2.0,
+    "spotify": 2.0, "youtube": 1.8, "streaming": 1.5, "ott": 1.5,
+    "personalization": 2.5, "recommendation": 2.5, "content discovery": 2.5,
+    "engagement": 2.0, "retention": 2.0, "churn": 2.0,
+    "creator": 1.8, "influencer": 1.5, "tiktok": 1.8,
+    "video generation": 2.5, "dubbing": 2.0, "localization": 2.0,
 }
 
 # Additional recency boost (newer = better)
@@ -332,25 +359,31 @@ def build_enhanced_prompt(articles: List[Dict], user_context: str) -> str:
     """
     now_iso = datetime.datetime.now().strftime("%Y-%m-%d %H:%M IST")
 
-    prompt = f"""You are an insightful AI analyst writing for an innovation team leader who tracks global AI developments. Your reader is based in India, works in innovation, and wants to spot emerging trends and opportunities.
+    prompt = f"""You are an insightful AI analyst writing for an innovation team leader in the media/entertainment industry. Your reader tracks AI developments AND media industry innovations to identify opportunities.
 
 YOUR MISSION: Transform these news items into an engaging, opinionated digest that:
-1. Identifies patterns and connections between stories
-2. Provides critical analysis (not just facts - WHY does this matter?)
-3. Highlights innovation opportunities and emerging trends
-4. Uses a conversational, engaging tone (not boring corporate speak)
-5. Focuses on implications for innovation teams
+1. Covers latest AI developments (models, tools, research, companies)
+2. Highlights media/streaming industry innovations and competitive moves
+3. Connects AI trends to media/entertainment applications
+4. Identifies innovation opportunities for media companies
+5. Provides business insights (high-level, suitable for leadership)
 
 CONTEXT ABOUT YOUR READER:
 {user_context}
 
+CRITICAL: When discussing AI news, contextualize for media/entertainment:
+- How could this AI tech be used in content creation, personalization, or production?
+- What does this mean for streaming platforms, content discovery, or audience engagement?
+- Are competitors (Netflix, Disney+, Spotify, YouTube) likely using similar tech?
+- What innovation opportunities does this create for media companies?
+
 WRITING STYLE:
 - Be opinionated and analytical (e.g., "This is a big deal because..." or "This suggests...")
-- Connect dots between stories ("This aligns with..." or "This contradicts...")
+- Connect dots between AI trends and media applications
 - Highlight what's genuinely new vs. incremental
-- Use engaging language (avoid "Furthermore", "Moreover" - be conversational)
-- Include specific details (numbers, names, dates) but focus on implications
-- When relevant, mention what this means for innovation teams
+- Use engaging, conversational language (not boring corporate speak)
+- Include specific details but focus on business implications
+- Balance AI technical news with media industry context
 
 FORMAT YOUR OUTPUT EXACTLY AS:
 
@@ -533,13 +566,17 @@ def main():
 
     # Build user context
     user_context = """
-    - Role: Innovation team leader
-    - Location: India
-    - Interests: ALL AI topics (LLMs, tools, open source, research, startups)
-    - Companies: OpenAI, Anthropic, Google AI, Meta AI, Mistral, Hugging Face, Microsoft AI, Amazon AI, and emerging startups
+    - Role: Innovation team member for media/entertainment industry client
+    - Location: India (but tracking global developments)
+    - Industry Focus: Streaming/Entertainment with AI applications
+    - AI Interests: ALL AI topics (LLMs, tools, open source, research, startups) + how they apply to media
+    - Media Interests: Content discovery & personalization, production efficiency, audience engagement, monetization
+    - AI Companies: OpenAI, Anthropic, Google AI, Meta AI, Mistral, Hugging Face, Microsoft AI, Amazon AI, startups
+    - Media Companies: Netflix, Disney+, Spotify, YouTube, Prime Video, emerging streaming platforms, creator economy
     - Geography: Global coverage (US, UK, EU, India, Asia, Australia)
-    - Style preference: Insightful, opinionated, engaging (NOT boring corporate summaries)
-    - Goal: Spot innovation opportunities and emerging trends
+    - Deliverables: Innovation proposals, trend reports, POCs, competitive intelligence
+    - Style preference: Business insights (high-level), opinionated analysis, innovation opportunities
+    - Goal: Spot innovation opportunities by tracking AI + media trends
     """
 
     prompt_used = build_enhanced_prompt(top_articles, user_context)

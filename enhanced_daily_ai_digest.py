@@ -495,24 +495,34 @@ WRITING STYLE:
 - Include specific details but focus on business implications
 - Balance AI technical news with media industry context
 
-FORMAT YOUR OUTPUT EXACTLY AS:
+FORMAT YOUR OUTPUT FOR EMAIL (use simple formatting that renders well in email clients):
 
 Subject: [Create an engaging subject line that captures the biggest theme/trend of the day, max 10 words]
 
-=== TOP INSIGHT ===
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 TOP INSIGHT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 [2-3 sentences: What's the most important pattern or trend today? Connect multiple stories if relevant. Be opinionated.]
 
-=== KEY THEMES TODAY ===
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔑 KEY THEMES TODAY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 • [Theme 1]: Brief insight
 • [Theme 2]: Brief insight
 • [Theme 3]: Brief insight
 
-=== DETAILED STORIES ===
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📰 DETAILED STORIES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [For each story, write in this format:]
 
-## [Number]. [Engaging Title]
-**Source**: [Source name] | **When**: [Timeframe like "Today" or "Yesterday"]
+─────────────────────────────────────────
+[Number]. [ENGAGING TITLE IN CAPS]
+─────────────────────────────────────────
+Source: [Source name] | When: [Timeframe like "Today" or "Yesterday"]
 
 [2-3 engaging paragraphs that include:
 - What happened (specific facts, numbers, quotes)
@@ -520,17 +530,18 @@ Subject: [Create an engaging subject line that captures the biggest theme/trend 
 - What's interesting or surprising about it
 - Any connections to other trends or stories]
 
-**Link**: [URL]
-**Innovation angle**: [1 sentence: What could innovation teams learn or do with this?]
-
----
+🔗 Link: [URL]
+💡 Innovation angle: [1 sentence: What could innovation teams learn or do with this?]
 
 [Repeat for each story]
 
-=== BOTTOM LINE ===
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📌 BOTTOM LINE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 [2-3 sentences: Final thought about what all this means. What should readers be thinking about? Any predictions or questions to ponder?]
 
----
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Delivered: {now_iso}
 
 NOW, HERE ARE TODAY'S ARTICLES (sorted by relevance):
@@ -557,6 +568,8 @@ IMPORTANT REMINDERS:
 - Use conversational language
 - Include specific facts and details
 - Make it worth the reader's time
+- Follow the email format EXACTLY as specified above (use emojis, unicode lines, and simple text formatting)
+- Do NOT use markdown syntax like ** or ## or ### (use plain text with emojis instead)
 
 Write the digest now:"""
 
@@ -603,50 +616,55 @@ MEDIA/ENTERTAINMENT BUSINESS CONTEXT:
 - Content types: Video (series, films, live), audio (music, podcasts), interactive content
 - Audience segments: Demographics, genres, viewing behaviors, device preferences
 
-FORMAT YOUR OUTPUT EXACTLY AS:
+FORMAT YOUR OUTPUT FOR EMAIL (use simple formatting that renders well in email clients):
 
-=== 💡 STRATEGIC INNOVATION IDEAS ===
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 STRATEGIC INNOVATION IDEAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-## STRATEGIC OPPORTUNITIES
+🎯 STRATEGIC OPPORTUNITIES
 
 [For each of 3-4 ideas, use this format:]
 
-### [NUMBER]. [Initiative Name] - [One-line value proposition]
+─────────────────────────────────────────
+[NUMBER]. [INITIATIVE NAME IN CAPS]
+[One-line value proposition]
+─────────────────────────────────────────
 
-**Business Context**: [What trend/news sparked this opportunity? Why does it matter to the organization now?]
+📊 Business Context: [What trend/news sparked this opportunity? Why does it matter to the organization now?]
 
-**Strategic Initiative**: [Describe the organization-level initiative in 2-3 sentences. What are we building/launching/changing? Who needs to be involved? What's the scope?]
+🚀 Strategic Initiative: [Describe the organization-level initiative in 2-3 sentences. What are we building/launching/changing? Who needs to be involved? What's the scope?]
 
-**Business Impact**:
-• Revenue/Growth: [How does this drive business results?]
-• Competitive Position: [How does this differentiate us or defend market share?]
-• Operational Benefit: [Any cost savings or efficiency gains?]
+💰 Business Impact:
+  • Revenue/Growth: [How does this drive business results?]
+  • Competitive Position: [How does this differentiate us or defend market share?]
+  • Operational Benefit: [Any cost savings or efficiency gains?]
 
-**Implementation Approach**:
-• Phase 1 (Months 1-3): [Initial steps, team formation, pilot scope]
-• Phase 2 (Months 4-6): [Scale-up, integration, measurement]
-• Phase 3 (Months 7-12): [Full rollout, optimization]
+📅 Implementation Approach:
+  • Phase 1 (Months 1-3): [Initial steps, team formation, pilot scope]
+  • Phase 2 (Months 4-6): [Scale-up, integration, measurement]
+  • Phase 3 (Months 7-12): [Full rollout, optimization]
 
-**Cross-Functional Requirements**:
-• Teams Needed: [Product, Engineering, Content, Data Science, Business Development, etc.]
-• Technology Stack: [Key technologies or vendors to evaluate]
-• Investment Level: [Rough estimate - Small/Medium/Large]
+👥 Cross-Functional Requirements:
+  • Teams Needed: [Product, Engineering, Content, Data Science, Business Development, etc.]
+  • Technology Stack: [Key technologies or vendors to evaluate]
+  • Investment Level: [Rough estimate - Small/Medium/Large]
 
-**Success Metrics**: [2-3 measurable KPIs to track]
+📈 Success Metrics: [2-3 measurable KPIs to track]
 
----
 
-## EXPERIMENTAL INITIATIVES (Quick Wins)
+🧪 EXPERIMENTAL INITIATIVES (Quick Wins)
 
 [2-3 smaller-scale experiments that can validate concepts quickly]
-• **[Experiment Name]**: [1-2 sentence description] | Timeline: [weeks] | Team: [which department leads]
+• [Experiment Name]: [1-2 sentence description] | Timeline: [weeks] | Team: [which department leads]
 
-## PARTNERSHIP & ECOSYSTEM OPPORTUNITIES
+
+🤝 PARTNERSHIP & ECOSYSTEM OPPORTUNITIES
 
 [1-2 strategic partnerships or vendor evaluations]
-• **[Partner Type]**: [What kind of partnership and why it's strategic]
+• [Partner Type]: [What kind of partnership and why it's strategic]
 
----
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 TODAY'S NEWS ARTICLES (Use these to generate ideas):
 
@@ -671,6 +689,8 @@ IMPORTANT GUIDELINES:
 - Focus on media/entertainment business applications
 - Think about what would require a project team, budget approval, and 6-12 months to execute
 - Ensure cross-functional collaboration is necessary
+- Follow the email format EXACTLY as specified above (use emojis, unicode lines, and simple text formatting)
+- Do NOT use markdown syntax like ** or ## or ### (use plain text with emojis and bullet points instead)
 
 Generated: {now_iso}
 
@@ -756,7 +776,7 @@ def create_mobile_tldr(ai_text: str, subject: str) -> str:
             in_top_insight = True
             continue
         if in_top_insight:
-            if line.startswith('===') or line.startswith('##'):
+            if line.startswith('━') or line.startswith('===') or line.startswith('##') or line.startswith('🔑'):
                 break
             if line.strip():
                 top_insight_lines.append(line.strip())
@@ -779,22 +799,32 @@ def create_mobile_tldr(ai_text: str, subject: str) -> str:
                 theme_count += 1
                 if theme_count >= 3:  # Limit to 3 themes
                     break
-            elif line.startswith('==='):
+            elif line.startswith('━') or line.startswith('===') or line.startswith('📰'):
                 break
 
     # Extract story titles only
     mobile_content.append("\n\n📰 STORIES (Tap for full digest):")
     story_count = 0
-    for line in lines:
-        if line.startswith('## '):
-            # Extract just the title
-            title = line.replace('##', '').strip()
-            # Remove numbering if present
-            if '. ' in title:
-                title = title.split('. ', 1)[1] if len(title.split('. ', 1)) > 1 else title
-            mobile_content.append(f"  {story_count + 1}. {title[:60]}...")
-            story_count += 1
-            if story_count >= 5:  # Show max 5 stories in TL;DR
+    in_stories = False
+    for i, line in enumerate(lines):
+        # Detect when we're in the DETAILED STORIES section
+        if "DETAILED STORIES" in line.upper():
+            in_stories = True
+            continue
+
+        # Look for story titles (lines that start with number followed by period)
+        if in_stories and line.strip() and not line.startswith('─') and not line.startswith('━'):
+            # Check if line starts with a number followed by period (e.g., "1. TITLE" or "2. TITLE")
+            stripped = line.strip()
+            if stripped and stripped[0].isdigit() and '. ' in stripped:
+                # Extract just the title
+                title = stripped.split('. ', 1)[1] if len(stripped.split('. ', 1)) > 1 else stripped
+                mobile_content.append(f"  {story_count + 1}. {title[:60]}...")
+                story_count += 1
+                if story_count >= 5:  # Show max 5 stories in TL;DR
+                    break
+            # Stop if we hit the ideation or bottom line section
+            elif "INNOVATION IDEAS" in stripped or "BOTTOM LINE" in stripped:
                 break
 
     mobile_content.append(f"\n\n📖 {story_count}+ stories in full digest below")

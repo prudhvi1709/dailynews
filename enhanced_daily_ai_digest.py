@@ -235,6 +235,9 @@ def generate_google_news_queries(keyword_weights: Dict[str, float], max_queries:
 # Mobile TL;DR version
 ENABLE_MOBILE_TLDR = os.environ.get("ENABLE_MOBILE_TLDR", "true").lower() in ("1", "true", "yes")
 
+# Organization-level ideation (strategic innovation ideas)
+ENABLE_IDEATION = os.environ.get("ENABLE_IDEATION", "true").lower() in ("1", "true", "yes")
+
 TIMEOUT_SECONDS = int(os.environ.get("HTTP_TIMEOUT") or "15")
 DRY_RUN = os.environ.get("DRY_RUN", "false").lower() in ("1", "true", "yes")
 
@@ -560,6 +563,140 @@ Write the digest now:"""
     return prompt
 
 
+def build_ideation_prompt(articles: List[Dict]) -> str:
+    """
+    Build prompt for organization-level strategic ideation
+    Focus: Strategic initiatives requiring cross-functional teams and executive approval
+    """
+    now_iso = datetime.datetime.now().strftime("%Y-%m-%d %H:%M IST")
+
+    prompt = f"""You are a strategic innovation consultant working for a media/entertainment organization (streaming platforms, content production, distribution). Your role is to transform news and trends into ORGANIZATION-LEVEL strategic initiatives.
+
+YOUR MISSION: Generate 3-5 actionable strategic opportunities that:
+1. Require organizational resources (cross-functional teams, budget, executive approval)
+2. Create competitive advantages or address market opportunities
+3. Drive business impact (revenue growth, cost reduction, market positioning)
+4. Are implementable within 6-12 months with proper investment
+5. Are specific to media/entertainment business models
+
+CRITICAL FOCUS - ORGANIZATION LEVEL:
+✅ Strategic initiatives requiring multiple departments (product, engineering, content, business)
+✅ Platform/infrastructure investments that benefit the entire organization
+✅ New product features or business models
+✅ Competitive positioning moves
+✅ Partnership strategies with technology vendors or content creators
+✅ Market expansion or audience growth initiatives
+✅ Operational efficiency improvements at scale
+✅ Organizational capability building (new tech stacks, AI teams, data platforms)
+
+❌ AVOID PERSONAL-LEVEL IDEAS:
+❌ Individual productivity tips or tool recommendations
+❌ Single-person tasks or small workflow improvements
+❌ Personal skill development suggestions
+❌ Minor feature tweaks that don't require cross-team coordination
+
+MEDIA/ENTERTAINMENT BUSINESS CONTEXT:
+- Revenue models: Subscriptions, advertising, pay-per-view, licensing
+- Key metrics: Subscriber growth, engagement (watch time), churn reduction, content ROI
+- Competitive landscape: Streaming wars, creator economy, AI-powered personalization
+- Technology areas: Content recommendation, personalization, production efficiency, distribution, monetization
+- Content types: Video (series, films, live), audio (music, podcasts), interactive content
+- Audience segments: Demographics, genres, viewing behaviors, device preferences
+
+FORMAT YOUR OUTPUT EXACTLY AS:
+
+=== 💡 STRATEGIC INNOVATION IDEAS ===
+
+## STRATEGIC OPPORTUNITIES
+
+[For each of 3-4 ideas, use this format:]
+
+### [NUMBER]. [Initiative Name] - [One-line value proposition]
+
+**Business Context**: [What trend/news sparked this opportunity? Why does it matter to the organization now?]
+
+**Strategic Initiative**: [Describe the organization-level initiative in 2-3 sentences. What are we building/launching/changing? Who needs to be involved? What's the scope?]
+
+**Business Impact**:
+• Revenue/Growth: [How does this drive business results?]
+• Competitive Position: [How does this differentiate us or defend market share?]
+• Operational Benefit: [Any cost savings or efficiency gains?]
+
+**Implementation Approach**:
+• Phase 1 (Months 1-3): [Initial steps, team formation, pilot scope]
+• Phase 2 (Months 4-6): [Scale-up, integration, measurement]
+• Phase 3 (Months 7-12): [Full rollout, optimization]
+
+**Cross-Functional Requirements**:
+• Teams Needed: [Product, Engineering, Content, Data Science, Business Development, etc.]
+• Technology Stack: [Key technologies or vendors to evaluate]
+• Investment Level: [Rough estimate - Small/Medium/Large]
+
+**Success Metrics**: [2-3 measurable KPIs to track]
+
+---
+
+## EXPERIMENTAL INITIATIVES (Quick Wins)
+
+[2-3 smaller-scale experiments that can validate concepts quickly]
+• **[Experiment Name]**: [1-2 sentence description] | Timeline: [weeks] | Team: [which department leads]
+
+## PARTNERSHIP & ECOSYSTEM OPPORTUNITIES
+
+[1-2 strategic partnerships or vendor evaluations]
+• **[Partner Type]**: [What kind of partnership and why it's strategic]
+
+---
+
+TODAY'S NEWS ARTICLES (Use these to generate ideas):
+
+"""
+
+    for i, article in enumerate(articles, 1):
+        prompt += f"""
+[{i}] Title: {article.get('title')}
+Source: {article.get('source')}
+Published: {article.get('publishedAt')}
+Description: {article.get('description')}
+Relevance Score: {article.get('score', 0):.2f}
+
+"""
+
+    prompt += f"""
+IMPORTANT GUIDELINES:
+- Every idea must be STRATEGIC and ORGANIZATION-LEVEL (not personal productivity)
+- Include specific business metrics and competitive context
+- Make initiatives concrete enough to present to leadership
+- Connect ideas directly to the news/trends provided above
+- Focus on media/entertainment business applications
+- Think about what would require a project team, budget approval, and 6-12 months to execute
+- Ensure cross-functional collaboration is necessary
+
+Generated: {now_iso}
+
+Write the strategic ideation now:"""
+
+    return prompt
+
+
+def generate_innovation_ideas(articles: List[Dict]) -> str:
+    """
+    Generate organization-level strategic innovation ideas
+    Returns formatted ideation section to append to digest
+    """
+    print("DEBUG: Generating organization-level strategic ideation...")
+
+    ideation_prompt = build_ideation_prompt(articles)
+
+    try:
+        ideation_output = ask_openai(ideation_prompt)
+        print("DEBUG: Successfully generated strategic ideation")
+        return "\n\n" + ideation_output
+    except Exception as e:
+        print(f"WARNING: Ideation generation failed: {e}")
+        return ""  # Fail gracefully - don't break the digest
+
+
 def ask_openai(prompt: str, model: Optional[str] = None) -> str:
     """Call OpenAI with enhanced model"""
     model_to_use = model or OPENAI_MODEL
@@ -789,6 +926,14 @@ def main():
         raise RuntimeError(f"OpenAI request failed: {e}")
 
     subject, body = parse_subject_and_body(ai_out)
+
+    # Generate organization-level strategic ideation if enabled
+    if ENABLE_IDEATION:
+        print("DEBUG: Generating organization-level strategic ideation...")
+        ideation_section = generate_innovation_ideas(top_articles)
+        if ideation_section:
+            body = body + ideation_section
+            print("DEBUG: Strategic ideation appended to digest")
 
     # Create mobile TL;DR if enabled
     mobile_tldr = None

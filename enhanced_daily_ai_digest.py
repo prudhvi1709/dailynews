@@ -834,6 +834,35 @@ def create_mobile_tldr(ai_text: str, subject: str) -> str:
     return "\n".join(mobile_content)
 
 
+def save_digest_data(subject: str, body: str, digests_dir: str = "digests"):
+    """Save digest to JSON file and update manifest for web viewer"""
+    import json
+    os.makedirs(digests_dir, exist_ok=True)
+
+    date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    digest_file = os.path.join(digests_dir, f"{date_str}.json")
+
+    with open(digest_file, "w", encoding="utf-8") as f:
+        json.dump({"date": date_str, "subject": subject, "body": body}, f, ensure_ascii=False, indent=2)
+
+    manifest_file = os.path.join(digests_dir, "manifest.json")
+    try:
+        with open(manifest_file, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        manifest = []
+
+    # Remove existing entry for today if re-running
+    manifest = [e for e in manifest if e.get("date") != date_str]
+    manifest.append({"date": date_str, "subject": subject})
+    manifest.sort(key=lambda e: e["date"], reverse=True)
+
+    with open(manifest_file, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, ensure_ascii=False, indent=2)
+
+    print(f"DEBUG: Saved digest to {digest_file}")
+
+
 def log_email_send(subject: str, status: str, log_file: str = "email_log.txt", max_entries: int = 30):
     """Log email sends with automatic cleanup"""
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -989,6 +1018,7 @@ def main():
             send_via_gmail(subject, body, mobile_tldr)
             print(f"SUCCESS: Sent '{subject}'")
             log_email_send(subject, "SUCCESS")
+            save_digest_data(subject, body)
         except Exception as e:
             error_msg = f"FAILED: {str(e)[:100]}"
             print(f"ERROR: Failed to send email: {e}")

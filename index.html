@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily AI Digest Archive</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    header {
+      max-width: 800px;
+      margin: 0 auto 2rem;
+    }
+    header h1 { font-size: 1.6rem; font-weight: 700; color: #f8fafc; }
+    header p { margin-top: .4rem; font-size: .9rem; color: #94a3b8; }
+
+    #digest-list {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+    }
+
+    details {
+      background: #1e2330;
+      border: 1px solid #2d3548;
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color .15s;
+    }
+    details[open] { border-color: #4f6ef7; }
+
+    summary {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary:hover { background: #252b3b; }
+
+    .chevron {
+      flex-shrink: 0;
+      width: 18px; height: 18px;
+      color: #94a3b8;
+      transition: transform .2s;
+    }
+    details[open] .chevron { transform: rotate(90deg); }
+
+    .date-badge {
+      flex-shrink: 0;
+      font-size: .75rem;
+      font-weight: 600;
+      background: #2d3548;
+      color: #94a3b8;
+      padding: .2rem .6rem;
+      border-radius: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+    details[open] .date-badge { background: #4f6ef720; color: #818cf8; }
+
+    .subject {
+      flex: 1;
+      font-size: .95rem;
+      font-weight: 500;
+      color: #e2e8f0;
+      line-height: 1.3;
+    }
+
+    .digest-body {
+      padding: 0 1.25rem 1.25rem;
+      border-top: 1px solid #2d3548;
+    }
+
+    .loading {
+      padding: 1.5rem 0;
+      text-align: center;
+      color: #64748b;
+      font-size: .875rem;
+    }
+
+    .body-text {
+      margin-top: 1rem;
+      font-size: .875rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #cbd5e1;
+    }
+
+    /* Highlight section dividers */
+    .body-text .section-line {
+      color: #4f6ef7;
+      opacity: .5;
+    }
+
+    #status {
+      max-width: 800px;
+      margin: 0 auto 1rem;
+      font-size: .8rem;
+      color: #64748b;
+      text-align: right;
+    }
+
+    .error-msg {
+      color: #f87171;
+      font-size: .875rem;
+      padding: 1rem 0;
+      text-align: center;
+    }
+
+    .empty-msg {
+      text-align: center;
+      color: #64748b;
+      padding: 3rem 0;
+      font-size: .9rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📰 Daily AI Digest</h1>
+    <p>All past digests — newest first. Click a date to expand.</p>
+  </header>
+  <div id="status"></div>
+  <div id="digest-list"></div>
+
+  <script type="module">
+    import { html, render, nothing } from 'https://cdn.jsdelivr.net/npm/lit-html@3/lit-html.js';
+
+    const BASE = import.meta.url.replace(/\/[^/]*$/, '');
+    const MANIFEST_URL = `${BASE}/digests/manifest.json`;
+
+    const cache = new Map();  // date -> body text
+
+    function formatDate(dateStr) {
+      try {
+        const d = new Date(dateStr + 'T00:00:00');
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      } catch { return dateStr; }
+    }
+
+    function renderBody(date, state) {
+      if (state === 'idle') return nothing;
+      if (state === 'loading') return html`<div class="loading">Loading…</div>`;
+      if (state === 'error') return html`<div class="error-msg">Failed to load digest.</div>`;
+      return html`<pre class="body-text">${cache.get(date) ?? ''}</pre>`;
+    }
+
+    function DigestCard(entry, bodyState, onToggle) {
+      return html`
+        <details @toggle=${(e) => onToggle(entry.date, e.target.open)}>
+          <summary>
+            <svg class="chevron" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M7.293 4.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L11.586 10 7.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+            <span class="date-badge">${formatDate(entry.date)}</span>
+            <span class="subject">${entry.subject}</span>
+          </summary>
+          <div class="digest-body">
+            ${renderBody(entry.date, bodyState)}
+          </div>
+        </details>
+      `;
+    }
+
+    // --- State ---
+    let manifest = [];
+    let bodyStates = {};   // date -> 'idle' | 'loading' | 'loaded' | 'error'
+
+    function renderAll(container) {
+      if (manifest.length === 0) {
+        render(html`<div class="empty-msg">No digests yet. Check back after the first daily run.</div>`, container);
+        return;
+      }
+      render(
+        manifest.map(entry =>
+          DigestCard(entry, bodyStates[entry.date] ?? 'idle', handleToggle)
+        ),
+        container
+      );
+    }
+
+    async function handleToggle(date, open) {
+      if (!open) return;
+      if (cache.has(date)) return;  // already loaded
+
+      bodyStates[date] = 'loading';
+      renderAll(listEl);
+
+      try {
+        const res = await fetch(`${BASE}/digests/${date}.json`);
+        if (!res.ok) throw new Error(res.statusText);
+        const data = await res.json();
+        cache.set(date, data.body);
+        bodyStates[date] = 'loaded';
+      } catch (err) {
+        console.error('Failed to load digest', date, err);
+        bodyStates[date] = 'error';
+      }
+
+      renderAll(listEl);
+    }
+
+    const listEl = document.getElementById('digest-list');
+    const statusEl = document.getElementById('status');
+
+    try {
+      const res = await fetch(MANIFEST_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      manifest = await res.json();
+      statusEl.textContent = `${manifest.length} digest${manifest.length !== 1 ? 's' : ''} available`;
+    } catch (err) {
+      console.error('Failed to load manifest', err);
+      statusEl.textContent = 'Could not load manifest.';
+    }
+
+    renderAll(listEl);
+  </script>
+</body>
+</html>

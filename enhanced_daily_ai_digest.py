@@ -38,100 +38,92 @@ FROM_EMAIL = os.environ.get("FROM_EMAIL")
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
 
 # ---------- Comprehensive Global RSS Feed List ----------
-# Organized by category for diversity
+# Organized by category for diversity and freshness
 FEED_CATEGORIES = {
-    "ai_focused": [
+    # ── AI-dedicated newsletters & blogs (highest signal) ──────────────────
+    "ai_newsletters_primary": [
+        "https://www.deeplearning.ai/the-batch/feed/",       # Andrew Ng's The Batch
+        "https://importai.substack.com/feed",                # Import AI – Jack Clark
+        "https://bensbites.beehiiv.com/feed",                # Ben's Bites
+        "https://www.aisnakeoil.com/feed",                   # AI Snake Oil
+        "https://www.oneusefulthing.org/feed",               # Ethan Mollick / wharton
+        "https://thegradient.pub/rss/",                      # The Gradient
+        "https://simonwillison.net/atom/everything/",        # Simon Willison – LLMs
+        "https://lilianweng.github.io/index.xml",            # Lilian Weng (OpenAI)
+        "https://magazine.sebastianraschka.com/feed",        # Sebastian Raschka
+        "https://www.interconnects.ai/feed",                 # Nathan Lambert – RLHF/alignment
+    ],
+    # ── AI lab / company official blogs ────────────────────────────────────
+    "ai_labs": [
+        "https://openai.com/blog/rss/",
+        "https://www.anthropic.com/rss.xml",
+        "https://blog.google/technology/ai/rss/",
+        "https://deepmind.google/blog/feed/basic/",
+        "https://ai.meta.com/blog/rss/",
+        "https://mistral.ai/news/rss.xml",
+        "https://cohere.com/blog/rss/",
+        "https://www.together.ai/blog/rss.xml",
+        "https://www.microsoft.com/en-us/research/feed/",
+        "https://blogs.nvidia.com/feed/",
+    ],
+    # ── Top AI-focused news sites ───────────────────────────────────────────
+    "ai_news_sites": [
         "https://www.technologyreview.com/feed/",
         "https://www.artificialintelligence-news.com/feed/",
-        "https://venturebeat.com/category/ai/feed/",
         "https://www.marktechpost.com/feed/",
         "https://syncedreview.com/feed/",
         "https://www.unite.ai/feed/",
+        "https://404media.co/rss/",                          # Indie, great AI coverage
     ],
+    # ── Major tech media with strong AI sections ────────────────────────────
     "major_tech_news": [
         "https://www.theverge.com/rss/ai/index.xml",
         "https://techcrunch.com/tag/artificial-intelligence/feed/",
         "https://www.wired.com/feed/tag/ai/latest/rss",
-        "https://www.zdnet.com/topic/artificial-intelligence/rss.xml",
         "https://arstechnica.com/tag/artificial-intelligence/feed/",
-        "https://www.engadget.com/rss.xml",
+        "https://www.zdnet.com/topic/artificial-intelligence/rss.xml",
     ],
+    # ── Business & financial press ──────────────────────────────────────────
     "business_analysis": [
-        "https://www.forbes.com/ai/feed/",
-        "https://www.businessinsider.com/sai/rss",
-        "https://www.cnbc.com/id/19854910/device/rss/rss.html",  # Tech
         "https://fortune.com/section/artificial-intelligence/feed/",
+        "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+        "https://news.crunchbase.com/feed/",
+        "https://techcrunch.com/tag/venture-capital/feed/",
     ],
-    "research_academic": [
-        "https://blog.google/technology/ai/rss/",
-        "https://openai.com/blog/rss/",
-        "https://www.deepmind.com/blog/rss.xml",
-        "https://blogs.nvidia.com/feed/",
-        "https://ai.meta.com/blog/rss/",
-        "https://www.microsoft.com/en-us/research/feed/",
-    ],
+    # ── Open-source / developer community ──────────────────────────────────
     "open_source_community": [
         "https://huggingface.co/blog/feed.xml",
         "https://github.blog/category/ai-and-ml/feed/",
         "https://pytorch.org/blog/feed.xml",
-    ],
-    "developer_focused": [
         "https://news.ycombinator.com/rss",
         "https://www.reddit.com/r/MachineLearning/.rss",
-        "https://www.reddit.com/r/artificial/.rss",
         "https://dev.to/feed/tag/ai",
     ],
+    # ── Research / academic ─────────────────────────────────────────────────
+    "research_academic": [
+        "https://arxiv.org/rss/cs.AI",                       # arXiv AI papers
+        "https://arxiv.org/rss/cs.LG",                       # arXiv ML papers
+        "https://paperswithcode.com/latest/feed",
+    ],
+    # ── Broad global tech news ──────────────────────────────────────────────
     "news_general": [
         "https://feeds.bbci.co.uk/news/technology/rss.xml",
         "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml",
         "https://www.reuters.com/technology/artificial-intelligence/rss",
         "https://www.theguardian.com/technology/artificialintelligenceai/rss",
-        "https://www.wsj.com/xml/rss/3_7455.xml",  # Tech
     ],
+    # ── India / Asia coverage ───────────────────────────────────────────────
     "asia_india": [
-        "https://timesofindia.indiatimes.com/rssfeeds/66949542.cms",  # Tech
+        "https://timesofindia.indiatimes.com/rssfeeds/66949542.cms",
         "https://economictimes.indiatimes.com/tech/rssfeeds/13357270.cms",
-        "https://tech.hindustantimes.com/rss/tech/rssfeed.xml",
         "https://www.thehindu.com/sci-tech/technology/feeder/default.rss",
     ],
-    "uk_europe": [
-        "https://www.standard.co.uk/tech/rss",
-        "https://www.independent.co.uk/tech/rss",
-        "https://www.telegraph.co.uk/technology/rss.xml",
-    ],
-    "australia": [
-        "https://www.smh.com.au/rss/technology.xml",
-        "https://www.afr.com/technology/rss",
-    ],
-    "startups_vc": [
-        "https://news.crunchbase.com/feed/",
-        "https://techcrunch.com/tag/venture-capital/feed/",
-    ],
-    "ai_newsletters_blogs": [
-        "https://www.aisnakeoil.com/feed",
-        "https://www.oneusefulthing.org/feed",
-    ],
-    # Media/Streaming Industry (for context and applications)
+    # ── Media / Streaming (applications context) ───────────────────────────
     "streaming_media": [
         "https://variety.com/feed/",
         "https://www.hollywoodreporter.com/feed/",
-        "https://thestreamable.com/feed",
-        "https://www.streamingmedia.com/RSS/Articles.xml",
-    ],
-    "creator_economy": [
-        "https://www.tubefilter.com/feed/",
-        "https://techcrunch.com/tag/creator-economy/feed/",
-    ],
-    "media_business": [
-        "https://adage.com/rss.xml",
         "https://digiday.com/feed/",
-    ],
-    # Linear TV / Broadcast
-    "broadcast_tv": [
-        "https://www.broadcastingcable.com/feed",
-        "https://tvnewscheck.com/feed/",
-        "https://www.sportico.com/feed/",
-        "https://www.multichannel.com/feed",
+        "https://www.tubefilter.com/feed/",
     ],
 }
 
@@ -881,8 +873,208 @@ def log_email_send(subject: str, status: str, log_file: str = "email_log.txt", m
         f.writelines(lines)
 
 
+def _esc(s: str) -> str:
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _render_section_header(header: str) -> str:
+    """Style a section header div based on its emoji/keyword."""
+    h = header.upper()
+    if "TOP INSIGHT" in h or "🎯" in header:
+        bg, border = "#1e3a8a", "#3b82f6"
+    elif "KEY THEMES" in h or "🔑" in header:
+        bg, border = "#1e40af", "#60a5fa"
+    elif "DETAILED STORIES" in h or "📰" in header:
+        bg, border = "#1d4ed8", "#93c5fd"
+    elif "BOTTOM LINE" in h or "📌" in header:
+        bg, border = "#1e3a8a", "#3b82f6"
+    elif any(x in h for x in ("STRATEGIC", "INNOVATION", "IDEATION")) or "💡" in header:
+        bg, border = "#4c1d95", "#a78bfa"
+    else:
+        bg, border = "#374151", "#9ca3af"
+    return (
+        f'<div style="background:{bg};border-left:4px solid {border};'
+        f'color:white;padding:12px 18px;border-radius:6px;'
+        f'margin:28px 0 10px 0;font-size:15px;font-weight:700;'
+        f'letter-spacing:.3px;">{_esc(header)}</div>'
+    )
+
+
+def convert_text_to_html_email(body: str, subject: str, mobile_tldr: Optional[str] = None) -> str:
+    """
+    Convert the AI-generated plain-text digest into a clean, newsletter-style
+    HTML email.  Parses the ━━━/─── section structure and applies CSS styling.
+    """
+    now_str = datetime.datetime.now().strftime("%B %d, %Y")
+
+    def parse_body(text: str) -> str:
+        lines = text.split("\n")
+        out = []
+        i = 0
+        while i < len(lines):
+            raw = lines[i]
+            stripped = raw.strip()
+
+            # ── Major section separator + header + separator ────────────────
+            if re.match(r"^━{5,}", stripped):
+                i += 1
+                if i < len(lines):
+                    header = lines[i].strip()
+                    i += 1
+                    # consume closing separator if present
+                    if i < len(lines) and re.match(r"^━{5,}", lines[i].strip()):
+                        i += 1
+                    if header:
+                        out.append(_render_section_header(header))
+                continue
+
+            # ── Story sub-divider ─────────────────────────── ───────────────
+            if re.match(r"^─{5,}", stripped):
+                i += 1
+                if i < len(lines):
+                    story_title = lines[i].strip()
+                    i += 1
+                    # consume closing ─── if present
+                    if i < len(lines) and re.match(r"^─{5,}", lines[i].strip()):
+                        i += 1
+                    if story_title:
+                        out.append(
+                            f'<div style="margin-top:22px;padding:12px 16px;'
+                            f'background:#f8fafc;border-left:3px solid #2563eb;'
+                            f'border-radius:0 6px 6px 0;">'
+                            f'<p style="margin:0;font-size:16px;font-weight:700;'
+                            f'color:#1e3a8a;">{_esc(story_title)}</p></div>'
+                        )
+                continue
+
+            # ── Source/meta line ────────────────────────────────────────────
+            if stripped.startswith("Source:"):
+                out.append(
+                    f'<p style="margin:4px 0 6px;font-size:12px;'
+                    f'color:#6b7280;font-style:italic;">{_esc(stripped)}</p>'
+                )
+                i += 1
+                continue
+
+            # ── Link line ───────────────────────────────────────────────────
+            if stripped.startswith("🔗"):
+                url_m = re.search(r"(https?://\S+)", stripped)
+                if url_m:
+                    url = url_m.group(1).rstrip(".,)")
+                    out.append(
+                        f'<p style="margin:8px 0 4px;">'
+                        f'<a href="{_esc(url)}" style="display:inline-block;'
+                        f'background:#2563eb;color:white;text-decoration:none;'
+                        f'padding:6px 16px;border-radius:4px;font-size:13px;'
+                        f'font-weight:600;">Read Article →</a></p>'
+                    )
+                else:
+                    out.append(f'<p style="margin:6px 0;">{_esc(stripped)}</p>')
+                i += 1
+                continue
+
+            # ── Innovation angle ────────────────────────────────────────────
+            if stripped.startswith("💡"):
+                content = re.sub(r"^💡\s*(Innovation angle:)?\s*", "", stripped, flags=re.I)
+                out.append(
+                    f'<div style="background:#f0fdf4;border-left:3px solid #059669;'
+                    f'padding:8px 14px;margin:8px 0;border-radius:0 5px 5px 0;'
+                    f'font-size:13px;color:#065f46;">'
+                    f'<strong>💡 Innovation:</strong> {_esc(content)}</div>'
+                )
+                i += 1
+                continue
+
+            # ── Bullet points ───────────────────────────────────────────────
+            if stripped.startswith("•") or stripped.startswith("▸"):
+                content = stripped.lstrip("•▸").strip()
+                out.append(
+                    f'<p style="margin:5px 0 5px 18px;position:relative;">'
+                    f'<span style="position:absolute;left:-16px;color:#2563eb;'
+                    f'font-weight:700;">▸</span>{_esc(content)}</p>'
+                )
+                i += 1
+                continue
+
+            # ── Empty line ──────────────────────────────────────────────────
+            if not stripped:
+                out.append('<div style="height:6px;"></div>')
+                i += 1
+                continue
+
+            # ── Regular paragraph ───────────────────────────────────────────
+            out.append(
+                f'<p style="margin:7px 0;line-height:1.7;color:#374151;">'
+                f'{_esc(stripped)}</p>'
+            )
+            i += 1
+
+        return "\n".join(out)
+
+    # ── Mobile TL;DR banner ─────────────────────────────────────────────────
+    mobile_html = ""
+    if mobile_tldr:
+        tldr_lines = []
+        for ln in mobile_tldr.split("\n"):
+            s = ln.strip()
+            if not s:
+                continue
+            if "=" * 8 in s or "─" * 8 in s:
+                tldr_lines.append('<hr style="border:none;border-top:1px solid #bfdbfe;margin:6px 0;">')
+            elif s.startswith("•") or s.startswith("  "):
+                tldr_lines.append(f'<p style="margin:3px 0 3px 14px;font-size:13px;">{_esc(s)}</p>')
+            else:
+                tldr_lines.append(f'<p style="margin:4px 0;font-size:13px;font-weight:600;">{_esc(s)}</p>')
+        mobile_html = (
+            '<div style="background:#eff6ff;border:1px solid #bfdbfe;'
+            'border-radius:8px;padding:16px 18px;margin-bottom:24px;">'
+            '<p style="margin:0 0 8px;font-weight:700;font-size:14px;color:#1d4ed8;">'
+            '📱 QUICK SCAN — TL;DR</p>'
+            + "\n".join(tldr_lines)
+            + "</div>"
+        )
+
+    body_html = parse_body(body)
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>{_esc(subject)}</title>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+<div style="max-width:680px;margin:0 auto;padding:24px 16px;">
+
+  <!-- Header -->
+  <div style="background:linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 60%,#2563eb 100%);border-radius:12px 12px 0 0;padding:32px 30px 24px;text-align:center;">
+    <p style="margin:0 0 8px;color:#93c5fd;font-size:11px;text-transform:uppercase;letter-spacing:2px;font-weight:600;">AI + Media Intelligence</p>
+    <h1 style="margin:0 0 10px;color:white;font-size:22px;font-weight:800;line-height:1.35;">{_esc(subject)}</h1>
+    <p style="margin:0;color:#bfdbfe;font-size:13px;">{now_str}</p>
+  </div>
+
+  <!-- Body card -->
+  <div style="background:white;border-radius:0 0 12px 12px;padding:28px 30px 32px;box-shadow:0 4px 16px rgba(0,0,0,.08);">
+
+    {mobile_html}
+
+    {body_html}
+
+    <!-- Footer -->
+    <div style="margin-top:36px;padding-top:20px;border-top:1px solid #e5e7eb;text-align:center;">
+      <p style="margin:0;color:#9ca3af;font-size:11px;letter-spacing:.5px;">
+        DAILY AI DIGEST &nbsp;·&nbsp; Powered by OpenAI &amp; RSS
+      </p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>"""
+
+
 def send_via_gmail(subject: str, body: str, mobile_tldr: Optional[str] = None):
-    """Send email via Gmail SMTP with optional mobile TL;DR"""
+    """Send email via Gmail SMTP with rich HTML and plain-text fallback."""
     if not (FROM_EMAIL and TO_EMAIL and GMAIL_APP_PASSWORD):
         raise ValueError("Missing FROM_EMAIL / TO_EMAIL / GMAIL_APP_PASSWORD env vars")
 
@@ -891,29 +1083,12 @@ def send_via_gmail(subject: str, body: str, mobile_tldr: Optional[str] = None):
     msg["To"] = TO_EMAIL
     msg["Subject"] = subject
 
-    # Combine mobile TL;DR with full body for plain text
-    if mobile_tldr:
-        plain_text = mobile_tldr + "\n\n" + body
-    else:
-        plain_text = body
-
+    # Plain-text fallback
+    plain_text = (mobile_tldr + "\n\n" + body) if mobile_tldr else body
     msg.set_content(plain_text)
 
-    # Create nice HTML version with better formatting
-    if mobile_tldr:
-        # Mobile TL;DR at top with background color for visibility
-        mobile_html = mobile_tldr.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        mobile_html = mobile_html.replace("\n", "<br>")
-        mobile_section = f"<div style='background-color: #f0f8ff; padding: 15px; margin-bottom: 20px; border-left: 4px solid #0066cc;'>{mobile_html}</div>"
-    else:
-        mobile_section = ""
-
-    body_html = body.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    body_html = body_html.replace("\n\n", "</p><p>")
-    body_html = body_html.replace("\n", "<br>")
-
-    html_body = f"<html><body style='font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; max-width: 700px; margin: 0 auto; padding: 20px;'>{mobile_section}<p>{body_html}</p></body></html>"
-
+    # Beautiful HTML version
+    html_body = convert_text_to_html_email(body, subject, mobile_tldr)
     msg.add_alternative(html_body, subtype="html")
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as smtp:

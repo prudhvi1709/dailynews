@@ -4,7 +4,7 @@
 
 Fetches from diverse sources, uses advanced AI to provide opinionated insights (not boring summaries), and delivers via Gmail. Works locally and in GitHub Actions (scheduled at 10:00 AM IST).
 
-## 🆕 Latest Enhancements
+## Latest Enhancements
 
 The system has been **significantly upgraded**! See [UPGRADE_GUIDE.md](UPGRADE_GUIDE.md) for full details.
 
